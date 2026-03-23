@@ -1,0 +1,31 @@
+# WordPress Core (don't track)
+wp-admin/
+wp-includes/
+wp-*.php
+xmlrpc.php
+index.php
+license.txt
+readme.html
+
+# Config (has secrets)
+wp-config.php
+wp-config-sample.php
+
+# Uploads & generated files
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+
+# Plugins (install via WP Admin, not Git)
+wp-content/plugins/
+# ↑ UNLESS you have a custom plugin you built yourself
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Node (if using build tools)
+node_modules/
