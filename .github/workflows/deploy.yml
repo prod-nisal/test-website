@@ -4,26 +4,51 @@ on:
   push:
     branches:
       - main
+      - staging
 
 jobs:
-  deploy:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.KINSTA_HOST }}
-          port: ${{ secrets.KINSTA_PORT }}
-          username: ${{ secrets.KINSTA_USER }}
-          password: ${{ secrets.KINSTA_PASS }}
-          protocol: ftps
-          local-dir: ./wp-content/
-          server-dir: /www/YOUR-SITE-FOLDER/public/wp-content/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            uploads/**
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KINSTA_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.KINSTA_STAGING_PORT }} ${{ secrets.KINSTA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Staging
+        run: |
+          rsync -avzr \
+            --exclude='uploads/' \
+            --exclude='.git' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.KINSTA_STAGING_PORT }} -o StrictHostKeyChecking=no" \
+            ./wp-content/ \
+            ${{ secrets.KINSTA_USER }}@${{ secrets.KINSTA_HOST }}:/www/testmig_838/public/wp-content/
+
+  deploy-live:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KINSTA_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.KINSTA_PORT }} ${{ secrets.KINSTA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Live
+        run: |
+          rsync -avzr \
+            --exclude='uploads/' \
+            --exclude='.git' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.KINSTA_PORT }} -o StrictHostKeyChecking=no" \
+            ./wp-content/ \
+            ${{ secrets.KINSTA_USER }}@${{ secrets.KINSTA_HOST }}:/www/testmig_838/public/wp-content/
