@@ -4,9 +4,34 @@ on:
   push:
     branches:
       - main
+      - staging
 
 jobs:
-  deploy:
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KINSTA_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.KINSTA_STAGING_PORT }} ${{ secrets.KINSTA_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Staging
+        run: |
+          rsync -avzr \
+            --exclude='uploads/' \
+            --exclude='.git' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.KINSTA_STAGING_PORT }} -o StrictHostKeyChecking=no" \
+            ./wp-content/ \
+            ${{ secrets.KINSTA_USER }}@${{ secrets.KINSTA_HOST }}:/www/testwpr_471/public/wp-content/
+
+  deploy-live:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,7 +44,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.KINSTA_PORT }} ${{ secrets.KINSTA_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy via Rsync
+      - name: Deploy to Live
         run: |
           rsync -avzr \
             --exclude='uploads/' \
