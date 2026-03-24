@@ -19,10 +19,6 @@ wp-content/backup-db/
 wp-content/advanced-cache.php
 wp-content/wp-cache-config.php
 
-# Plugins (install via WP Admin, not Git)
-wp-content/plugins/
-# ↑ UNLESS you have a custom plugin you built yourself
-
 # OS junk
 .DS_Store
 Thumbs.db
